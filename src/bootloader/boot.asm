@@ -1,0 +1,65 @@
+org 0x7c00
+bits 16
+
+%define ENDL 0x0D, 0x0A
+
+#
+# FAT12 header
+#
+jmp short start
+nop
+
+
+start:
+    jmp main
+
+; Prints a string on the screen
+; Params:
+;   - ds:si points to a string
+;
+puts:
+    ; save registers to modify later
+    push si
+    push ax
+
+.loop:
+    lodsb           ; load next character in al
+    or al, al       ; verify if next character is null?
+    jz .done
+
+    mov ah, 0x0e    ; função de impressão do BIOS
+    mov bh, 0       ; página de vídeo
+    int 0x10        ; chama a interrupção
+
+    jmp .loop
+
+.done:
+    pop ax
+    pop si
+    ret
+
+main:
+    ; setup data segments
+    mov ax, 0
+    mov ds, ax
+    mov es, ax
+
+    ; setup stack
+    mov ss, ax
+    mov sp, 0x7C00
+
+    ; print message
+    mov si, msg_hello
+    call puts
+
+    hlt
+
+.halt:
+    jmp .halt
+
+
+msg_hello: db 'Sodor Bootloader: Hello World!', ENDL, 0
+
+
+times 510-($-$$) db 0
+dw 0AA55h
